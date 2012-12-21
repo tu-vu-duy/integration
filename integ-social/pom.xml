@@ -10,6 +10,7 @@
   <packaging>pom</packaging>
   <name>eXo Integration - Social</name>
   <modules>
+    <module>integ-social-commons</module>
     <module>integ-social-ecms</module>
   </modules>
 </project>

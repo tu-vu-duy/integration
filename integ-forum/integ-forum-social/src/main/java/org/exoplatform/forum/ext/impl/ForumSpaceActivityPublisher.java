@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.jcr.RepositoryException;
+
 import org.apache.commons.lang.StringEscapeUtils;
 import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.forum.bbcode.core.ExtendedBBCodeProvider;
@@ -38,10 +40,11 @@ import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
-import org.exoplatform.social.core.manager.ActivityManager;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.social.core.storage.api.ActivityStorage;
+import org.exoplatform.social.ext.common.ActivityExtensionService;
 
 /**
  * @author <a href="mailto:patrice.lamarque@exoplatform.com">Patrice Lamarque</a>
@@ -91,22 +94,24 @@ public class ForumSpaceActivityPublisher extends ForumEventListener {
     AddPost, AddTopic, UpdatePost, UpdateTopic
   }
   
-  private void saveActivity(Identity ownerStream, ExoSocialActivity activity) throws Exception {
-    ActivityManager activityM = (ActivityManager) ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ActivityManager.class);
-    activityM.saveActivityNoReturn(ownerStream, activity);
+  private ExoSocialActivity saveActivity(Identity ownerStream, ExoSocialActivity activity) throws Exception {
+    ActivityStorage activityM = (ActivityStorage) ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(ActivityStorage.class);
+    return activityM.saveActivity(ownerStream, activity);
   }
   
-  private ExoSocialActivity activity(Identity author, String title, String body, String forumId, String categoryId, String topicId, String type, Map<String, String> templateParams) throws Exception {
+  private ExoSocialActivity activity(Identity author, Post post, Topic topic, String type, Map<String, String> templateParams) throws Exception {
     ExoSocialActivity activity = new ExoSocialActivityImpl();
+    String body = (post == null) ? topic.getDescription() : post.getMessage();
     body = StringEscapeUtils.unescapeHtml(TransformHTML.getTitleInHTMLCode(body, new ArrayList<String>((new ExtendedBBCodeProvider()).getSupportedBBCodes())));
     activity.setUserId(author.getId());
+    String title = (post == null) ? topic.getTopicName() : post.getName();
     title = StringEscapeUtils.unescapeHtml(title);
     activity.setTitle(title);
     activity.setBody(body);
     activity.setType(FORUM_APP_ID);
-    templateParams.put(FORUM_ID_KEY, forumId);
-    templateParams.put(CATE_ID_KEY, categoryId);
-    templateParams.put(TOPIC_ID_KEY, topicId);
+    templateParams.put(FORUM_ID_KEY, topic.getForumId());
+    templateParams.put(CATE_ID_KEY, topic.getCategoryId());
+    templateParams.put(TOPIC_ID_KEY, topic.getId());
     templateParams.put(ACTIVITY_TYPE_KEY, type);
     activity.setTemplateParams(templateParams);
     return activity;
@@ -182,7 +187,11 @@ public class ForumSpaceActivityPublisher extends ForumEventListener {
           }
           if (ownerStream != null) {
             Map<String, String> templateParams = updateTemplateParams(new HashMap<String, String>(), post.getId(), post.getLink(), post.getOwner(), post.getName(), type);
-            saveActivity(ownerStream, activity(author, post.getName(), post.getMessage(), forumId, categoryId, topicId, type.name(), templateParams));
+            ExoSocialActivity activity = saveActivity(ownerStream, activity(author, post, topic, type.name(), templateParams));
+            if(activity != null){
+              String path = (post.getPath() != null) ? post.getPath() : post.getId();
+              saveActivityInfoToForum(path, activity.getId());
+            }
           }
         }
         } catch (Exception e) { //ForumService
@@ -209,12 +218,23 @@ public class ForumSpaceActivityPublisher extends ForumEventListener {
         }
         if (ownerStream != null) {
           Map<String, String> templateParams = updateTemplateParams(new HashMap<String, String>(), topic.getId(), topic.getLink(), topic.getOwner(), topic.getTopicName(), type);
-          saveActivity(ownerStream, activity(author, topic.getTopicName(), topic.getDescription(), forumId, categoryId, topic.getId(), type.name(), templateParams));
+          ExoSocialActivity activity = saveActivity(ownerStream, activity(author, null, topic, type.name(), templateParams));
+          if(activity != null){
+            String path = (topic.getPath() != null) ? topic.getPath() : topic.getId();
+            saveActivityInfoToForum(path, activity.getId());
+          }
         }
       } catch (Exception e) { //ForumService
-        LOG.error("Can not record Activity for space when add topic " + e.getMessage());
+        LOG.error("Can not record Activity for space when add topic ",  e);
       }
     }
+  }
+
+  private void saveActivityInfoToForum(String path, String activityId) throws Exception {
+    ForumActivityExtenstionServiceImpl extensionService = (ForumActivityExtenstionServiceImpl) ExoContainerContext.getCurrentContainer()
+                                                                                                        .getComponentInstanceOfType(ActivityExtensionService.class);
+    System.out.println("\n\n\n saveActivityId " + path);
+    extensionService.saveActivityId(path, activityId);
   }
   
   @Override

@@ -159,6 +159,11 @@
       <!-- Our own project modules -->
       <dependency>
         <groupId>org.exoplatform.integration</groupId>
+        <artifactId>integ-social-commons</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.exoplatform.integration</groupId>
         <artifactId>integ-calendar-social</artifactId>
         <version>${project.version}</version>
       </dependency>
