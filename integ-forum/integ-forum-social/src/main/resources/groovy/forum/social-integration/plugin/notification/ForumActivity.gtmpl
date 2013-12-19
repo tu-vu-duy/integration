@@ -1,0 +1,11 @@
+<div style="border:solid 1px blue;">
+	<div> 
+		<%=_ctx.appRes("ForumNotification.label.topicName")%>: $TOPIC_NAME<br/>
+		<%=_ctx.appRes("ForumNotification.label.message")%>: $MESSAGE<br/>
+		<span>$ACTIVITY</span>
+		<br/>
+		-----------------------------------------------------------
+		<br/>
+		<a href="$TOPIC_LINK"> Go to topic</a>
+	</div>
+</div>
