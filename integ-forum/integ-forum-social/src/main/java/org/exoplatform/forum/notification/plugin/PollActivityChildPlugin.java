@@ -21,20 +21,16 @@ import org.exoplatform.commons.api.notification.model.NotificationInfo;
 import org.exoplatform.commons.api.notification.plugin.AbstractNotificationChildPlugin;
 import org.exoplatform.commons.api.notification.service.template.TemplateContext;
 import org.exoplatform.commons.notification.template.TemplateUtils;
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.xml.InitParams;
-import org.exoplatform.forum.ext.activity.ForumActivityBuilder;
 import org.exoplatform.forum.ext.activity.ForumActivityUtils;
-import org.exoplatform.forum.service.DataStorage;
-import org.exoplatform.forum.service.Topic;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 
-public class ForumActivityChildPlugin extends AbstractNotificationChildPlugin {
+public class PollActivityChildPlugin extends AbstractNotificationChildPlugin {
 
-  public static final String ID = "ks-forum:spaces";
+  public static final String ID = "ks-poll:spaces";
   private ExoSocialActivity activity = null;
 
-  public ForumActivityChildPlugin(InitParams initParams) {
+  public PollActivityChildPlugin(InitParams initParams) {
     super(initParams);
   }
 
@@ -49,17 +45,6 @@ public class ForumActivityChildPlugin extends AbstractNotificationChildPlugin {
       String activityId = notification.getValueOwnerParameter(ForumNotificationUtils.ACTIVITY_ID.getKey());
       activity = ForumActivityUtils.getActivityManager().getActivity(activityId);
       templateContext.put("ACTIVITY", activity.getTitle());
-      //
-      DataStorage dataStorage = CommonsUtils.getService(DataStorage.class);
-      String topicId = getActivityParamValue(ForumActivityBuilder.TOPIC_ID_KEY);
-      String categoryId = getActivityParamValue(ForumActivityBuilder.CATE_ID_KEY);
-      String forumId = getActivityParamValue(ForumActivityBuilder.FORUM_ID_KEY);
-      //
-      Topic topic = dataStorage.getTopic(categoryId, forumId, topicId, "");
-
-      templateContext.put("TOPIC_NAME", topic.getTopicName());
-      templateContext.put("MESSAGE", topic.getDescription());
-      templateContext.put("TOPIC_LINK", ForumNotificationUtils.buildTopicLink(activity));
       //
       String content = TemplateUtils.processGroovy(templateContext);
       return content;

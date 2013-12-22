@@ -14,52 +14,49 @@
 * You should have received a copy of the GNU General Public License
 * along with this program; if not, see<http://www.gnu.org/licenses/>.
  */
-package org.exoplatform.forum.notification.plugin;
+package org.exoplatform.calendar.notification.plugin;
+
+import java.util.Map;
 
 import org.exoplatform.commons.api.notification.NotificationContext;
+import org.exoplatform.commons.api.notification.model.ArgumentLiteral;
 import org.exoplatform.commons.api.notification.model.NotificationInfo;
 import org.exoplatform.commons.api.notification.plugin.AbstractNotificationChildPlugin;
 import org.exoplatform.commons.api.notification.service.template.TemplateContext;
 import org.exoplatform.commons.notification.template.TemplateUtils;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.xml.InitParams;
-import org.exoplatform.forum.ext.activity.ForumActivityBuilder;
-import org.exoplatform.forum.ext.activity.ForumActivityUtils;
-import org.exoplatform.forum.service.DataStorage;
-import org.exoplatform.forum.service.Topic;
+import org.exoplatform.cs.ext.impl.CalendarSpaceActivityPublisher;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
+import org.exoplatform.social.core.manager.ActivityManager;
 
-public class ForumActivityChildPlugin extends AbstractNotificationChildPlugin {
-
-  public static final String ID = "ks-forum:spaces";
+public class CalendarActivityChildPlugin extends AbstractNotificationChildPlugin {
+  public final static ArgumentLiteral<String> ACTIVITY_ID = new ArgumentLiteral<String>(String.class, "activityId");
+  public static final String ID = "cs-calendar:spaces";
   private ExoSocialActivity activity = null;
 
-  public ForumActivityChildPlugin(InitParams initParams) {
+  public CalendarActivityChildPlugin(InitParams initParams) {
     super(initParams);
   }
 
   @Override
   public String makeContent(NotificationContext ctx) {
     try {
+      ActivityManager activityM = CommonsUtils.getService(ActivityManager.class);
+
       NotificationInfo notification = ctx.getNotificationInfo();
 
       String language = getLanguage(notification);
       TemplateContext templateContext = new TemplateContext(ID, language);
 
-      String activityId = notification.getValueOwnerParameter(ForumNotificationUtils.ACTIVITY_ID.getKey());
-      activity = ForumActivityUtils.getActivityManager().getActivity(activityId);
+      String activityId = notification.getValueOwnerParameter(ACTIVITY_ID.getKey());
+      activity = activityM.getActivity(activityId);
       templateContext.put("ACTIVITY", activity.getTitle());
       //
-      DataStorage dataStorage = CommonsUtils.getService(DataStorage.class);
-      String topicId = getActivityParamValue(ForumActivityBuilder.TOPIC_ID_KEY);
-      String categoryId = getActivityParamValue(ForumActivityBuilder.CATE_ID_KEY);
-      String forumId = getActivityParamValue(ForumActivityBuilder.FORUM_ID_KEY);
-      //
-      Topic topic = dataStorage.getTopic(categoryId, forumId, topicId, "");
+      String eventType = getActivityParamValue(CalendarSpaceActivityPublisher.EVENT_TYPE_KEY);
+      String eventId = getActivityParamValue(CalendarSpaceActivityPublisher.EVENT_ID_KEY);
+      String calendarId = getActivityParamValue(CalendarSpaceActivityPublisher.CALENDAR_ID_KEY);
 
-      templateContext.put("TOPIC_NAME", topic.getTopicName());
-      templateContext.put("MESSAGE", topic.getDescription());
-      templateContext.put("TOPIC_LINK", ForumNotificationUtils.buildTopicLink(activity));
       //
       String content = TemplateUtils.processGroovy(templateContext);
       return content;
@@ -69,7 +66,11 @@ public class ForumActivityChildPlugin extends AbstractNotificationChildPlugin {
   }
 
   public String getActivityParamValue(String key) {
-    return ForumNotificationUtils.getActivityParamValue(activity, key);
+    Map<String, String> params = activity.getTemplateParams();
+    if (params != null) {
+      return params.get(key) != null ? params.get(key) : "";
+    }
+    return "";
   }
 
   @Override
