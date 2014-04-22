@@ -94,7 +94,7 @@ public abstract class TopicActivityTask implements ActivityTask<ForumActivityCon
         
         return newActivity;
       } catch (Exception e) {
-        LOG.warn("Can not record Activity for when add topic's title " + ctx.getTopic().getId());
+        LOG.warn("Can not record Activity for when add topic's title " + ctx.getTopic().getId(), e);
         LOG.debug(e.getMessage(), e);
       }
       return null;
@@ -191,7 +191,7 @@ public abstract class TopicActivityTask implements ActivityTask<ForumActivityCon
         
         //
         a = processActivity(ctx, a);
-        am.updateActivity(a);
+        //am.updateActivity(a);
         
         //FORUM_12 case: update topic's title
         ExoSocialActivity newComment = processComment(ctx);
@@ -200,7 +200,8 @@ public abstract class TopicActivityTask implements ActivityTask<ForumActivityCon
         Identity poster = ForumActivityUtils.getIdentity(ctx.getTopic().getModifiedBy());
         newComment.setUserId(poster.getId());
         //
-        am.saveComment(a, newComment);
+        //am.saveComment(a, newComment);
+        am.saveComment(a, newComment, true);
         
         return newComment;
       } catch (Exception e) {
@@ -234,7 +235,7 @@ public abstract class TopicActivityTask implements ActivityTask<ForumActivityCon
         ExoSocialActivity a = ForumActivityUtils.getActivityOfTopic(ctx);
         
         a = processActivity(ctx, a);
-        am.updateActivity(a);
+        //am.updateActivity(a);
 
         //FORUM_13 case: update topic's content
         ExoSocialActivity newComment = processComment(ctx);
@@ -243,7 +244,8 @@ public abstract class TopicActivityTask implements ActivityTask<ForumActivityCon
         Identity poster = ForumActivityUtils.getIdentity(ctx.getTopic().getModifiedBy());
         newComment.setUserId(poster.getId());
         //
-        am.saveComment(a, newComment);
+        //am.saveComment(a, newComment);
+        am.saveComment(a, newComment, true);
         
         return newComment;
       } catch (Exception e) {

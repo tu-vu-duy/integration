@@ -93,7 +93,7 @@ public abstract class PostActivityTask implements ActivityTask<ForumActivityCont
           return null;
         }
         
-        am.updateActivity(topicActivity);
+        //am.updateActivity(topicActivity);
         
         //add new comment with title: first 3 lines
         ExoSocialActivity newComment = ForumActivityBuilder.createActivityComment(ctx.getPost(), ctx);
@@ -104,11 +104,12 @@ public abstract class PostActivityTask implements ActivityTask<ForumActivityCont
         newComment.setUserId(poster.getId());
         
         //
-        am.saveComment(topicActivity, newComment);
+        am.saveComment(topicActivity, newComment, true);
+        
         
         return newComment;
       } catch (Exception e) {
-        LOG.warn("Can not record comment when add post : " + ctx.getPost().getPath());
+        LOG.warn("Can not record comment when add post : " + ctx.getPost().getPath(), e);
         LOG.debug(e.getMessage(), e);
       }
       return null;
